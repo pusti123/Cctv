@@ -50,8 +50,9 @@ video{width:100%;background:#000;border-radius:16px;aspect-ratio:16/9;object-fit
 <button class="gh" onclick="stopCam()">■ Band</button>
 </div>
 <div class="card"><h2>Aapka CODE</h2>
-<p>Ye code Viewer wale phone me daalo.</p>
-<div class="big" id="code">----</div></div>
+<p>Ye code Viewer wale phone me daalo. Ye code is phone par hamesha wahi rahega.</p>
+<div class="big" id="code">----</div>
+<button class="gh" onclick="newCode()">🔁 Naya code banao</button></div>
 </section>
 
 <section id="view" hidden>
@@ -89,15 +90,23 @@ async function getCam(){
 async function startCam(){
  try{stopTracks();stream=await getCam();pv.srcObject=stream;await pv.play().catch(()=>{});startPeer()}
  catch(e){say('Camera nahi chala. Camera Allow karo ('+(e.name||'error')+')')}}
-function startPeer(){
- peer&&peer.destroy();calls=[];const id=rnd();
+function startPeer(retry){
+ retry=retry||0;peer&&peer.destroy();calls=[];
+ let id=null;try{id=localStorage.getItem('cctvId')}catch(e){}
+ if(!id){id=rnd();try{localStorage.setItem('cctvId',id)}catch(e){}}
  peer=new Peer('cctv'+id,{config:ICE});
- peer.on('open',()=>{$('code').textContent=id;say('Camera chalu hai. Code Viewer ko batao.')});
- peer.on('error',e=>{if(e.type==='unavailable-id')startPeer();else say('Server se connect nahi hua ('+e.type+'). Internet check karo.')});
+ peer.on('open',()=>{$('code').textContent=id;say('Camera chalu hai. Ye code Viewer ko batao.')});
+ peer.on('disconnected',()=>{peer&&!peer.destroyed&&peer.reconnect()});
+ peer.on('error',e=>{
+  if(e.type==='unavailable-id'){
+   if(retry<5){say('Code taiyar ho raha hai…');setTimeout(()=>startPeer(retry+1),3000)}
+   else newCode();
+  }else if(e.type!=='peer-unavailable')say('Server se connect nahi hua ('+e.type+'). Internet check karo.')});
  peer.on('connection',c=>c.on('open',()=>{
   if(!confirm('Koi viewer dekhna chahta hai. Allow karein?')){c.close();return}
   const call=peer.call(c.peer,stream);calls.push(call);live(true);say('Viewer connect ho gaya.');
   call.on('close',()=>{live(false);say('Viewer chala gaya.')})}))}
+function newCode(){try{localStorage.removeItem('cctvId')}catch(e){}if(stream)startPeer();else $('code').textContent='----'}
 function stopCam(){stopTracks();peer&&peer.destroy();peer=null;calls=[];pv.srcObject=null;$('code').textContent='----';live(false);say('Camera band.')}
 async function flip(){face=face==='environment'?'user':'environment';if(!stream)return;
  try{stopTracks();stream=await getCam();pv.srcObject=stream;
