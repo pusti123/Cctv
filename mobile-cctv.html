@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile CCTV</title>
+<style>
+:root{--bg:#f5f6f8;--sf:#fff;--tx:#14181f;--mu:#5d6877;--ln:#d9dee5;--rd:#e02424;--gr:#16a34a;--bl:#2563eb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07090c;--sf:#12161c;--tx:#f4f6f8;--mu:#a9b4c0;--ln:#2a323e}}
+:root[data-theme="dark"]{--bg:#07090c;--sf:#12161c;--tx:#f4f6f8;--mu:#a9b4c0;--ln:#2a323e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:4px 0}h2{font-size:20px;margin:0 0 8px}
+p{margin:6px 0;color:var(--mu)}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:16px;margin-top:14px}
+button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:14px;width:100%;margin-top:10px;color:#fff;cursor:pointer;min-height:52px}
+button:disabled{opacity:.45}
+.rd{background:var(--rd)}.gr{background:var(--gr)}.bl{background:var(--bl)}
+.gh{background:var(--sf);color:var(--tx);border:1px solid var(--ln)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea,select{width:100%;margin-top:8px;border:1px solid var(--ln);border-radius:12px;background:var(--bg);color:var(--tx);padding:12px;font:13px ui-monospace,Menlo,monospace}
+textarea{height:120px;resize:none}
+select{font:16px system-ui}
+video{width:100%;background:#000;border-radius:16px;aspect-ratio:16/9;object-fit:contain;display:block;margin-top:12px}
+.tag{display:inline-block;padding:4px 10px;border-radius:99px;border:1px solid var(--ln);font-size:12px;font-weight:700}
+.warn{background:#facc15;color:#000;border-radius:14px;padding:12px;font-weight:700;margin-top:14px}
+.warn span{font-weight:400}
+.msg{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--ln);font-size:14px}
+.top{display:flex;justify-content:space-between;align-items:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><h1>◉ Mobile CCTV</h1><span class="tag" id="st">OFFLINE</span></div>
+
+<section id="home">
+<p>Ek phone Camera, dusra phone Viewer. Koi login nahi, koi install nahi. Video seedha phone se phone jaata hai.</p>
+<button class="rd" onclick="go('cam')">📷 Ye phone CAMERA banega</button>
+<button class="bl" onclick="go('view')">👁 Ye phone VIEWER banega</button>
+<div class="card"><h2>Kaise chalega</h2>
+<p>1. Camera phone: Camera Start → Code Banao → code copy karke WhatsApp se Viewer ko bhejo.<br>
+2. Viewer phone: wo code paste karo → Jawab Code Banao → copy karke Camera wale ko bhejo.<br>
+3. Camera phone: jawab code paste karo → Connect. Live shuru!</p></div>
+<div class="warn">Camera hamesha sabki jaankari me lagao. <span>Chhupake record karna galat aur kai jagah gair-kanooni hai.</span></div>
+</section>
+
+<section id="cam" hidden>
+<button class="gh" onclick="go('home')">← Wapas</button>
+<video id="pv" playsinline muted autoplay></video>
+<div class="card">
+<select id="q"><option value="720">HD 720p (best balance)</option><option value="1080">HD 1080p (sabse saaf)</option><option value="480">Normal (data bachega)</option></select>
+<div class="row"><button class="gr" onclick="startCam()">▶ Camera Start</button><button class="gh" onclick="stopCam()">■ Band</button></div>
+<div class="row"><button class="gh" onclick="flip()">🔄 Front/Back</button><button class="gh" id="tb" onclick="torch()">🔦 Torch</button></div>
+</div>
+<div class="card"><h2>Step 1: Apna code</h2>
+<button class="rd" onclick="mkOffer()">Offer Code Banao</button>
+<textarea id="off" readonly placeholder="Yahan code aayega…"></textarea>
+<button class="gr" onclick="cp('off')">📋 CODE COPY KARO</button></div>
+<div class="card"><h2>Step 2: Viewer ka jawab</h2>
+<textarea id="ans" placeholder="Viewer ka code yahan paste karo…"></textarea>
+<button class="gr" onclick="connect()">Connect Karo</button></div>
+</section>
+
+<section id="view" hidden>
+<button class="gh" onclick="go('home')">← Wapas</button>
+<video id="rv" playsinline autoplay muted></video>
+<div class="row"><button class="gh" onclick="rv.requestFullscreen&&rv.requestFullscreen()">⛶ Full Screen</button><button class="gh" id="mb" onclick="mute()">🔇 Unmute</button></div>
+<button class="gh" onclick="shot()">📸 Screenshot</button>
+<div class="card"><h2>Step 1: Camera ka code</h2>
+<textarea id="in" placeholder="Camera wale ka code yahan paste karo…"></textarea>
+<button class="bl" onclick="mkAnswer()">Jawab Code Banao</button></div>
+<div class="card"><h2>Step 2: Ye code Camera wale ko bhejo</h2>
+<textarea id="out" readonly placeholder="Yahan jawab code aayega…"></textarea>
+<button class="gr" onclick="cp('out')">📋 CODE COPY KARO</button></div>
+</section>
+
+<div class="msg" id="msg" hidden></div>
+<p style="text-align:center;font-size:13px">Dono phone me achha WiFi/4G chahiye. Alag mobile networks par kabhi connection na bane to dono ko ek hi WiFi par try karo.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const rv=$('rv'),pv=$('pv');
+let stream=null,pc=null,face='environment',tOn=false;
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'},
+{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}]};
+function say(t){const m=$('msg');m.textContent=t;m.hidden=!t}
+function go(v){['home','cam','view'].forEach(x=>$(x).hidden=x!==v);say('');scrollTo(0,0)}
+function live(on){const s=$('st');s.textContent=on?'● LIVE':'OFFLINE';s.style.color=on?'var(--rd)':''}
+const enc=d=>btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+const dec=s=>JSON.parse(decodeURIComponent(escape(atob(s.trim().replace(/\s+/g,'')))));
+function cons(q,f){const w={1080:[1920,1080],720:[1280,720],480:[640,480]}[q];
+return{audio:true,video:{facingMode:{ideal:f},width:{ideal:w[0]},height:{ideal:w[1]}}}}
+async function startCam(){
+ stopTracks();
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return say('Is browser me camera block hai. Page ka link Chrome (ya Safari) me seedha kholo, Claude app ke andar nahi.');
+ const c=cons($('q').value,face);
+ try{try{stream=await navigator.mediaDevices.getUserMedia(c)}
+ catch(e1){if(e1.name==='NotAllowedError'||e1.name==='SecurityError')throw e1;c.audio=false;
+ try{stream=await navigator.mediaDevices.getUserMedia(c)}catch(e2){c.video=true;stream=await navigator.mediaDevices.getUserMedia(c)}}
+ pv.srcObject=stream;await pv.play().catch(()=>{});say('Camera chalu hai. Ab Step 1 me code banao.')}
+ catch(e){const n=e.name;
+ say(n==='NotAllowedError'||n==='SecurityError'?'Camera permission nahi mili. Link ko Chrome/Safari me seedha kholo (Claude app ke andar nahi), aur address bar ke camera/lock icon se Allow karo. ('+n+')':n==='NotFoundError'?'Is phone me camera nahi mila. ('+n+')':n==='NotReadableError'?'Camera dusri app use kar rahi hai. Wo app band karke dobara try karo. ('+n+')':'Camera start nahi hua. ('+n+')')}}
+function stopTracks(){stream&&stream.getTracks().forEach(t=>t.stop());stream=null}
+function stopCam(){stopTracks();pc&&pc.close();pc=null;pv.srcObject=null;live(false);say('Camera band.')}
+async function flip(){face=face==='environment'?'user':'environment';if(!stream)return;
+ await startCam();if(pc){const s=pc.getSenders().find(x=>x.track&&x.track.kind==='video');s&&s.replaceTrack(stream.getVideoTracks()[0])}}
+async function torch(){const t=stream&&stream.getVideoTracks()[0];if(!t)return say('Pehle camera start karo.');
+ try{tOn=!tOn;await t.applyConstraints({advanced:[{torch:tOn}]})}catch(e){tOn=false;say('Is phone me torch support nahi hai.')}}
+function ready(p){return new Promise(r=>{if(p.iceGatheringState==='complete')return r();
+ const f=()=>{if(p.iceGatheringState==='complete'){p.removeEventListener('icegatheringstatechange',f);r()}};
+ p.addEventListener('icegatheringstatechange',f);setTimeout(r,8000)})}
+function watch(p){p.onconnectionstatechange=()=>{const s=p.connectionState;
+ if(s==='connected'){live(true);say('Connected! Live chal raha hai.')}
+ if(s==='failed'||s==='disconnected'){live(false);say('Connection toot gaya. Dono phone WiFi par try karo ya code dobara banao.')}}}
+async function mkOffer(){
+ if(!stream)return say('Pehle Camera Start karo.');
+ say('Code ban raha hai… 5-8 second ruko.');
+ try{pc&&pc.close();pc=new RTCPeerConnection(ICE);watch(pc);
+ stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+ await pc.setLocalDescription(await pc.createOffer());await ready(pc);
+ $('off').value=enc(pc.localDescription);say('Code ban gaya. Copy karke Viewer ko bhejo.')}
+ catch(e){say('Code nahi bana. Dobara try karo.')}}
+async function connect(){
+ if(!pc)return say('Pehle Offer Code banao.');
+ try{await pc.setRemoteDescription(dec($('ans').value));say('Connect ho raha hai…')}
+ catch(e){say('Ye code sahi nahi lag raha. Viewer se naya code lekar paste karo.')}}
+async function mkAnswer(){
+ try{const o=dec($('in').value);say('Jawab code ban raha hai… 5-8 second ruko.');
+ pc&&pc.close();pc=new RTCPeerConnection(ICE);watch(pc);
+ pc.ontrack=e=>{rv.srcObject=e.streams[0];rv.play().catch(()=>{})};
+ await pc.setRemoteDescription(o);await pc.setLocalDescription(await pc.createAnswer());await ready(pc);
+ $('out').value=enc(pc.localDescription);say('Jawab code ban gaya. Copy karke Camera wale ko bhejo.')}
+ catch(e){say('Ye code sahi nahi lag raha. Camera wale se naya code lo.')}}
+async function cp(id){const el=$(id);if(!el.value)return say('Pehle code banao.');
+ try{await navigator.clipboard.writeText(el.value)}catch(e){el.focus();el.select();try{document.execCommand('copy')}catch(_){}}
+ say('Copy ho gaya! Ab WhatsApp me paste karke bhejo.')}
+function mute(){rv.muted=!rv.muted;$('mb').textContent=rv.muted?'🔇 Unmute':'🔊 Mute'}
+function shot(){if(!rv.videoWidth)return say('Pehle live video aana chahiye.');
+ const c=document.createElement('canvas');c.width=rv.videoWidth;c.height=rv.videoHeight;
+ c.getContext('2d').drawImage(rv,0,0);const a=document.createElement('a');
+ a.href=c.toDataURL('image/png');a.download='cctv-'+Date.now()+'.png';a.click()}
+</script>
+</body>
+</html>
